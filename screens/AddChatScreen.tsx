@@ -3,7 +3,7 @@ import { Button, Icon, Input } from '@rneui/base';
 import { db } from 'firebase';
 import { addDoc, collection } from 'firebase/firestore';
 import { useLayoutEffect, useState } from 'react';
-import { Text, View } from 'react-native';
+import { View } from 'react-native';
 
 const AddChatScreen = () => {
   const [input, setInput] = useState('');
@@ -34,7 +34,7 @@ const AddChatScreen = () => {
         leftIcon={<Icon name="wechat" type="antdesign" size={24} color="black" />}
         onSubmitEditing={createChat}
       />
-      <Button onPress={createChat} title="Create new Chat" />
+      <Button disabled={!input} onPress={createChat} title="Create new Chat" />
     </View>
   );
 };

@@ -23,7 +23,7 @@ import {
   TouchableWithoutFeedback,
   SafeAreaView,
 } from 'react-native';
-import { ScrollView } from 'react-native-gesture-handler';
+import { FlatList, ScrollView } from 'react-native-gesture-handler';
 
 const ChatScreen = () => {
   const { params } = useRoute();
@@ -108,8 +108,11 @@ const ChatScreen = () => {
         keyboardVerticalOffset={90}>
         <TouchableWithoutFeedback onPress={Keyboard.dismiss} className="h-full">
           <>
-            <ScrollView contentContainerStyle={{ paddingTop: 15 }}>
-              {messages.map(({ id, data }) =>
+            <FlatList
+              data={messages}
+              contentContainerStyle={{ paddingTop: 15, flexDirection: 'column-reverse' }}
+              keyExtractor={(m) => m.id}
+              renderItem={({ item: { id, data } }) =>
                 data.email === auth.currentUser?.email ? (
                   <View
                     key={id}
@@ -138,8 +141,8 @@ const ChatScreen = () => {
                     </Text>
                   </View>
                 )
-              )}
-            </ScrollView>
+              }
+            />
 
             <View className="w-full flex-row items-center p-4">
               <TextInput
