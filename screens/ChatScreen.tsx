@@ -123,7 +123,7 @@ const ChatScreen = () => {
                       rounded
                       source={{ uri: data.photoURL }}
                     />
-                    <Text className="ml-2 font-medium color-black">{data.message}</Text>
+                    <Text className="font-medium color-black">{data.message}</Text>
                   </View>
                 ) : (
                   <View
