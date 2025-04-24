@@ -1,4 +1,7 @@
 import { ListItem, Avatar } from '@rneui/base';
+import { db } from 'firebase';
+import { collection, onSnapshot, orderBy, query } from 'firebase/firestore';
+import { useEffect, useState } from 'react';
 
 interface Props {
   id: string;
@@ -9,19 +12,39 @@ interface Props {
 const CustomListItem = (props: Props) => {
   const { id, chatName, enterChat } = props;
 
+  const [chatMessages, setChatMessages] = useState<any>([]);
+
+  useEffect(() => {
+    return onSnapshot(
+      query(collection(db, 'chats', id, 'messages'), orderBy('timestamp', 'desc')),
+      (snapshot) => {
+        setChatMessages(
+          snapshot.docs.map((doc) => ({
+            id: doc.id,
+            data: doc.data(),
+          }))
+        );
+      }
+    );
+  }, []);
+
   return (
     <ListItem key={id} bottomDivider onPress={() => enterChat?.(id, chatName)}>
       <Avatar
         rounded
         source={{
-          uri: 'https://avatars.githubusercontent.com/u/14303404?u=cac2abfbc83c6a39752f653c8566d56e2be13219&v=4&size=80',
+          uri:
+            chatMessages[0]?.data.photoURL ||
+            'https://avatars.githubusercontent.com/u/97029705?v=4&size=80',
         }}
       />
       <ListItem.Content>
-        <ListItem.Title>{chatName}</ListItem.Title>
-        <ListItem.Subtitle numberOfLines={1} ellipsizeMode="tail">
-          ABCDdfdfdf
-        </ListItem.Subtitle>
+        <ListItem.Title className="font-bold">{chatName}</ListItem.Title>
+        {chatMessages.length > 0 && (
+          <ListItem.Subtitle numberOfLines={1} ellipsizeMode="tail">
+            {chatMessages[0]?.data.displayName}: {chatMessages[0]?.data.message}
+          </ListItem.Subtitle>
+        )}
       </ListItem.Content>
     </ListItem>
   );

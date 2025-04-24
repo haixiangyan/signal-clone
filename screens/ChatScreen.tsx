@@ -2,6 +2,15 @@ import { AntDesign, FontAwesome, Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { Avatar } from '@rneui/base';
 import { StatusBar } from 'expo-status-bar';
+import { auth, db } from 'firebase';
+import {
+  addDoc,
+  collection,
+  onSnapshot,
+  orderBy,
+  query,
+  serverTimestamp,
+} from 'firebase/firestore';
 import { useLayoutEffect, useState } from 'react';
 import {
   View,
@@ -10,17 +19,34 @@ import {
   TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
+  Keyboard,
+  TouchableWithoutFeedback,
+  SafeAreaView,
 } from 'react-native';
 import { ScrollView } from 'react-native-gesture-handler';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
 const ChatScreen = () => {
   const { params } = useRoute();
   const navigation = useNavigation();
 
-  const { chatId, chatName } = params as any;
+  const { id, chatName } = params as any;
 
   const [input, setInput] = useState('');
+  const [messages, setMessages] = useState<any[]>([]);
+
+  useLayoutEffect(() => {
+    return onSnapshot(
+      query(collection(db, 'chats', id, 'messages'), orderBy('timestamp', 'desc')),
+      (snapshot) => {
+        setMessages(
+          snapshot.docs.map((doc) => ({
+            id: doc.id,
+            data: doc.data(),
+          }))
+        );
+      }
+    );
+  }, [navigation]);
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -32,7 +58,9 @@ const ChatScreen = () => {
           <Avatar
             rounded
             source={{
-              uri: 'https://avatars.githubusercontent.com/u/7212311?u=f08f2cf31763895b89c799b18246640522a19ea2&v=4&size=80',
+              uri:
+                messages[0]?.data.photoURL ||
+                'https://avatars.githubusercontent.com/u/97029705?v=4&size=80',
             }}
           />
           <Text className="ml-2 text-xl font-bold color-white">{chatName}</Text>
@@ -54,10 +82,20 @@ const ChatScreen = () => {
         </View>
       ),
     });
-  }, []);
+  }, [navigation, messages]);
 
   const sendMessage = () => {
-    // TODO: send message to firebase
+    Keyboard.dismiss();
+
+    addDoc(collection(db, 'chats', id, 'messages'), {
+      timestamp: serverTimestamp(),
+      message: input,
+      displayName: auth.currentUser?.displayName,
+      photoURL: auth.currentUser?.photoURL,
+      email: auth.currentUser?.email,
+    });
+
+    setInput('');
   };
 
   return (
@@ -66,22 +104,57 @@ const ChatScreen = () => {
 
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        className="w-full flex-1"
+        className="h-full w-full flex-1"
         keyboardVerticalOffset={90}>
-        <>
-          <ScrollView />
-          <View className="w-full flex-row items-center p-4">
-            <TextInput
-              value={input}
-              onChangeText={setInput}
-              placeholder="Signal Message"
-              className="bottom-0 mr-4 h-12 flex-1 rounded-full border-none bg-[#ECECEC] p-3 color-gray-500"
-            />
-            <TouchableOpacity activeOpacity={0.5} onPress={sendMessage} className="">
-              <Ionicons name="send" size={24} color="#2B68E6" />
-            </TouchableOpacity>
-          </View>
-        </>
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss} className="h-full">
+          <>
+            <ScrollView contentContainerStyle={{ paddingTop: 15 }}>
+              {messages.map(({ id, data }) =>
+                data.email === auth.currentUser?.email ? (
+                  <View
+                    key={id}
+                    className="relative mb-5 mr-4 max-w-[80%] self-end rounded-xl bg-[#ECECEC] p-4">
+                    <Avatar
+                      containerStyle={{ position: 'absolute', bottom: -15, right: -5 }}
+                      size={30}
+                      rounded
+                      source={{ uri: data.photoURL }}
+                    />
+                    <Text className="ml-2 font-medium color-black">{data.message}</Text>
+                  </View>
+                ) : (
+                  <View
+                    key={id}
+                    className="relative m-4 max-w-[80%] self-start rounded-xl bg-[#2B68E6] p-4">
+                    <Avatar
+                      containerStyle={{ position: 'absolute', bottom: -15, left: -5 }}
+                      size={30}
+                      rounded
+                      source={{ uri: data.photoURL }}
+                    />
+                    <Text className="mb-4 ml-2 font-medium color-white">{data.message}</Text>
+                    <Text className="left-2 pr-2 text-xs font-light color-white">
+                      {data.displayName}
+                    </Text>
+                  </View>
+                )
+              )}
+            </ScrollView>
+
+            <View className="w-full flex-row items-center p-4">
+              <TextInput
+                value={input}
+                onChangeText={setInput}
+                placeholder="Signal Message"
+                className="bottom-0 mr-4 h-12 flex-1 rounded-full border-none bg-[#ECECEC] p-3 color-gray-500"
+                onEndEditing={sendMessage}
+              />
+              <TouchableOpacity activeOpacity={0.5} onPress={sendMessage} className="">
+                <Ionicons name="send" size={24} color="#2B68E6" />
+              </TouchableOpacity>
+            </View>
+          </>
+        </TouchableWithoutFeedback>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
