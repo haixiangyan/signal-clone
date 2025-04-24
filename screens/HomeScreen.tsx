@@ -2,16 +2,38 @@ import { AntDesign, SimpleLineIcons } from '@expo/vector-icons';
 import { StackActions, useNavigation } from '@react-navigation/native';
 import { Avatar } from '@rneui/base';
 import CustomListItem from 'components/CustomListItem';
-import { auth } from 'firebase';
-import { useLayoutEffect } from 'react';
+import { auth, db } from 'firebase';
+import { collection, onSnapshot, query } from 'firebase/firestore';
+import { useEffect, useLayoutEffect, useState } from 'react';
 import { View, ScrollView, SafeAreaView, TouchableOpacity } from 'react-native';
 
 const HomeScreen = () => {
   const navigation = useNavigation();
+  const [chats, setChats] = useState<any[]>([]);
 
   const signoutUser = () => {
     auth.signOut().then(() => {
       navigation.dispatch(StackActions.replace('Login'));
+    });
+  };
+
+  useEffect(() => {
+    return onSnapshot(query(collection(db, 'chats')), (snapshot) => {
+      setChats(
+        snapshot.docs.map((doc) => ({
+          id: doc.id,
+          data: doc.data(),
+        }))
+      );
+    });
+  }, []);
+
+  console.log('chats', chats);
+
+  const enterChat = (id: string, chatName: string) => {
+    navigation.navigate('Chat', {
+      id,
+      chatName,
     });
   };
 
@@ -40,12 +62,19 @@ const HomeScreen = () => {
         </View>
       ),
     });
-  }, []);
+  }, [navigation]);
 
   return (
     <SafeAreaView>
-      <ScrollView>
-        <CustomListItem />
+      <ScrollView className="h-full">
+        {chats.map((chat: any) => (
+          <CustomListItem
+            key={chat.id}
+            id={chat.id}
+            chatName={chat.data.chatName}
+            enterChat={enterChat}
+          />
+        ))}
       </ScrollView>
     </SafeAreaView>
   );

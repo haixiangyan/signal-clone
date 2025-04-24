@@ -3,14 +3,14 @@ import { ListItem, Avatar } from '@rneui/base';
 interface Props {
   id: string;
   chatName: string;
-  enterChat: () => void;
+  enterChat?: (id: string, chatName: string) => void;
 }
 
 const CustomListItem = (props: Props) => {
   const { id, chatName, enterChat } = props;
 
   return (
-    <ListItem>
+    <ListItem key={id} bottomDivider onPress={() => enterChat?.(id, chatName)}>
       <Avatar
         rounded
         source={{
@@ -18,9 +18,9 @@ const CustomListItem = (props: Props) => {
         }}
       />
       <ListItem.Content>
-        <ListItem.Title>Youtube Chat</ListItem.Title>
+        <ListItem.Title>{chatName}</ListItem.Title>
         <ListItem.Subtitle numberOfLines={1} ellipsizeMode="tail">
-          Onlinesjflsjklfjal sdjkf aklsj dflkaj slkdfjalksjdfljslkjasldjflkajdlfkjalksdjflkajdslkfjals dflajdflk
+          ABCDdfdfdf
         </ListItem.Subtitle>
       </ListItem.Content>
     </ListItem>
